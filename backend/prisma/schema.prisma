@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vacante {
+  id                  String      @id @default(uuid())
+  codigo              String      @unique
+  titulo              String
+  departamento        String
+  ubicacion           String
+  descripcion         String      @db.Text
+  requisitos          String      @db.Text
+  experienciaMinAnios Float       @default(0)
+  requiereRotativos   Boolean     @default(true)
+  escolaridadMinima   String      @default("Preparatoria")
+  habilidadesClave    String[]    @default([])
+  salarioMensual      Float?
+  cupo                Int         @default(1)
+  abierta             Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  candidatos          Candidato[]
+}
+
+model Candidato {
+  id                      String   @id @default(uuid())
+  folio                   String   @unique
+  nombre                  String
+  email                   String
+  ciudad                  String
+  vacanteId               String
+  vacante                 Vacante  @relation(fields: [vacanteId], references: [id], onDelete: Cascade)
+  experienciaAnios        Float    @default(0)
+  disponibilidadRotativos Boolean  @default(true)
+  escolaridad             String
+  cvTexto                 String   @db.Text
+  cvArchivoNombre         String?
+  scoreFinal              Int?
+  clasificacion           String?
+  esKnockOut              Boolean  @default(false)
+  motivoKnockOut          String?
+  justificacion           String?  @db.Text
+  preguntasSugeridas      Json?
+  alertaSeguridad         String?
+  evaluadoAt              DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([vacanteId])
+  @@index([scoreFinal])
+}
+
+model PoliticaChunk {
+  id            String   @id @default(uuid())
+  documento     String
+  tituloSeccion String
+  contenido     String   @db.Text
+  palabrasClave String[] @default([])
+  orden         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@unique([documento, orden])
+  @@index([documento])
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  titulo    String        @default("Nueva consulta RRHH")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  messages  ChatMessage[]
+  traces    AgentTrace[]
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model AgentTrace {
+  id               String      @id @default(uuid())
+  sessionId        String
+  session          ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userQuery        String      @db.Text
+  toolsUsed        Json
+  sourcesCited     Json
+  securityFlags    Json
+  outOfScope       Boolean     @default(false)
+  latencyMs        Int
+  estimatedTokens  Int         @default(0)
+  estimatedCostUsd Float       @default(0)
+  createdAt        DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
