@@ -31,7 +31,7 @@ export class HrAgentOrchestrator {
   constructor(
     private readonly gemini: GeminiClient = new GeminiClient(),
     private readonly tools: HrAgentTools = new HrAgentTools(gemini)
-  ) {}
+  ) { }
 
   async handleMessage(input: {
     sessionId?: string;
@@ -49,13 +49,13 @@ export class HrAgentOrchestrator {
 
     const session = input.sessionId
       ? await prisma.chatSession.upsert({
-          where: { id: input.sessionId },
-          update: { updatedAt: new Date() },
-          create: { id: input.sessionId, titulo: userMessage.slice(0, 60) },
-        })
+        where: { id: input.sessionId },
+        update: { updatedAt: new Date() },
+        create: { id: input.sessionId, titulo: userMessage.slice(0, 60) },
+      })
       : await prisma.chatSession.create({
-          data: { titulo: userMessage.slice(0, 60) },
-        });
+        data: { titulo: userMessage.slice(0, 60) },
+      });
 
     await prisma.chatMessage.create({
       data: { sessionId: session.id, role: "user", content: userMessage },
@@ -94,14 +94,22 @@ export class HrAgentOrchestrator {
 
     const historyRows = await prisma.chatMessage.findMany({
       where: { sessionId: session.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       take: 12,
     });
 
-    const contents: GeminiMessage[] = historyRows.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
+    const orderedHistory = [...historyRows].reverse();
+    const contents: GeminiMessage[] = [];
+    for (const msg of orderedHistory) {
+      const role: "user" | "model" = msg.role === "assistant" ? "model" : "user";
+      const last = contents[contents.length - 1];
+      // Evita turnos consecutivos del mismo rol (ej. tras un error previo en la sesion)
+      if (last && last.role === role) {
+        last.parts.push({ text: msg.content });
+      } else {
+        contents.push({ role, parts: [{ text: msg.content }] });
+      }
+    }
 
     const systemInstruction = loadPrompt("rrhh-agent.v1.md");
     const toolsUsed: ToolExecutionRecord[] = [];

@@ -19,7 +19,7 @@ export class GeminiClient {
   private readonly model: string;
 
   constructor(model?: string) {
-    this.model = model || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    this.model = model || process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   }
 
   private getApiKey(): string {
