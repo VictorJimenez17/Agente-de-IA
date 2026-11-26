@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs & coverage
+logs/
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+
+# Database & local data
+*.db
+*.sqlite
+postgres_data/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
