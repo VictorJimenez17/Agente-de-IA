@@ -2,6 +2,8 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { AppError } from "@shared/errors/AppError";
 import { securityHeadersMiddleware } from "@infrastructure/http/middlewares/SecurityMiddleware";
+import agentRoutes from "@infrastructure/http/routes/agent.routes";
+import vacantesRoutes from "@infrastructure/http/routes/vacantes.routes";
 
 export function createApp(): Express {
   const app = express();
@@ -36,6 +38,9 @@ export function createApp(): Express {
       timestamp: new Date().toISOString(),
     });
   });
+
+  app.use("/api/agent", agentRoutes);
+  app.use("/api", vacantesRoutes);
 
   app.use((req: Request, res: Response) => {
     res.status(404).json({
