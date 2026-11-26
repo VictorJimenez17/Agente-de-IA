@@ -2,22 +2,26 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 COPY backend/package*.json ./
 RUN npm ci
 
 COPY backend/tsconfig.json ./
 COPY backend/src ./src
 COPY backend/prisma ./prisma
-RUN npm run build
+RUN npm run build && npx esbuild prisma/seed.ts --bundle --platform=node --outfile=dist/seed.js --external:@prisma/client
 
 # ---- Etapa 2: produccion ----
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
+RUN apk add --no-cache openssl
 
 COPY backend/package*.json ./
 RUN npm ci --omit=dev && npm install --no-save prisma@^5.22.0
+
+ENV NODE_ENV=production
 
 # Copiar artefactos compilados, schema, prompts y dataset
 COPY --from=builder /app/dist ./dist
@@ -27,4 +31,4 @@ COPY prompts ./prompts
 COPY data ./data
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma db push && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push && node dist/seed.js && node dist/server.js"]
