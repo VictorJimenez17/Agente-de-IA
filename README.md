@@ -23,6 +23,20 @@ Analistas y coordinadores de Recursos Humanos (RRHH) en empresas de operación m
 4. **Se protege contra abusos y ataques**: detecta y bloquea *prompt injection* tanto en el chat como dentro de CVs no confiables, y rechaza consultas fuera de alcance (finanzas personales, cocina general, código ajeno, etc.).
 5. **Registra trazabilidad completa (`AgentTrace`)**: herramientas ejecutadas, fuentes citadas, alertas de seguridad, latencia, tokens y costo estimado por turno.
 
+### Capturas de la interfaz
+
+**Chat conversacional con formato y trazabilidad en vivo (`AgentTrace` + citas RAG):**
+
+![Chat y Trazabilidad en Vivo](docs/images/01-chat-y-trazabilidad.jpg)
+
+**Ranking de candidatos con detección de *Prompt Injection* y reglas *Knock-Out*:**
+
+![Ranking de Candidatos y Seguridad](docs/images/02-ranking-y-seguridad.png)
+
+**Vista inicial con accesos rápidos para demostración:**
+
+![Pantalla de inicio](docs/images/03-pantalla-inicio.png)
+
 ---
 
 ## 2. Arquitectura
@@ -68,7 +82,7 @@ Variables principales (`.env.example`):
 - `DATABASE_URL` (ejemplo local: `postgresql://postgres:postgres@localhost:5433/agente_rrhh`)
 - `PORT` (`3000`)
 - `GEMINI_API_KEY` (tu clave de Google AI Studio)
-- `GEMINI_MODEL` (`gemini-2.5-flash`)
+- `GEMINI_MODEL` (`gemini-3.5-flash-lite`)
 - `CORS_ORIGIN` (`http://localhost:5173`)
 
 ### Opción A: Arranque con Docker Compose (recomendado)
@@ -77,11 +91,7 @@ Variables principales (`.env.example`):
 docker compose up --build
 ```
 
-Una vez levantados los contenedores, carga el dataset inicial (vacantes, CVs sintéticos y políticas):
-
-```bash
-docker compose exec backend npx ts-node -r tsconfig-paths/register prisma/seed.ts
-```
+El contenedor del backend sincroniza automáticamente el esquema (`npx prisma db push`) y siembra el dataset inicial (3 vacantes, 9 CVs sintéticos y políticas RAG) antes de escuchar peticiones.
 
 Accesos:
 - Frontend: `http://localhost:5173`
@@ -135,12 +145,18 @@ cd ../frontend && npm ci && npm run lint && npm test && npm run build
 
 ---
 
-## 5. Limitaciones conocidas
+## 5. Limitaciones conocidas y mejoras futuras
 
+### Limitaciones conocidas
 - **Evaluación dependiente de API externa:** Si `GEMINI_API_KEY` no está configurada o hay indisponibilidad de red, el evaluador de CVs recurre a `buildFallbackEvaluation()` (coincidencia determinista de habilidades clave), con menor riqueza semántica.
 - **Recuperación RAG léxica (BM25/TF):** La búsqueda de políticas usa coincidencia léxica y palabras clave en PostgreSQL en lugar de embeddings vectoriales (decisión documentada en [ADR-003](docs/adr/003-rag-postgresql.md)). Sinónimos poco comunes pueden requerir términos cercanos al documento.
 - **Dataset sintético:** Todos los CVs (`@ejemplo.local`) y políticas pertenecen a la empresa ficticia BistroNube.
 - **Sesiones en base de datos sin autenticación multi-usuario:** Pensado para demostración y uso interno controlado en entorno de entrevista técnica.
+
+### ¿Qué haría con más tiempo?
+- **Búsqueda híbrida con `pgvector`:** Combinar el scoring léxico BM25/TF actual con embeddings vectoriales para mejorar el recall ante sinónimos y preguntas parafraseadas.
+- **Autenticación y control de acceso (RBAC):** Roles diferenciados (Reclutador vs. Dirección de Talento) para aprobar excepciones y auditar escalamientos.
+- **Notificaciones y exportación enriquecida:** Envío de guías de entrevista STAR por correo y exportación directa a PDF con branding corporativo.
 
 ---
 
