@@ -43,11 +43,11 @@ Analistas y coordinadores de Recursos Humanos (RRHH) en empresas de operación m
 
 ```mermaid
 flowchart LR
-    U["Usuario RRHH (React + Vite)"] -->|POST /api/agent/chat/stream (SSE)| API["Express API + SecurityMiddleware"]
-    U -->|GET /api/vacantes & POST /api/candidatos/upload| API
+    U["Usuario RRHH (React + Vite)"] -->|"POST /api/agent/chat/stream SSE"| API["Express API + SecurityMiddleware"]
+    U -->|"GET vacantes y POST CVs"| API
     API --> G["Guardrails (anti-injection + alcance)"]
     G --> ORC["HrAgentOrchestrator (Function Calling)"]
-    ORC <-->|Gemini 2.5 Flash| LLM["Google Gemini API"]
+    ORC <-->|"Gemini 3.5 Flash-Lite"| LLM["Google Gemini API"]
     ORC --> TOOLS["HrAgentTools (5 herramientas)"]
     TOOLS --> RAG["PolicyRetriever (BM25/TF sobre PoliticaChunk)"]
     TOOLS --> KO["Reglas Knock-Out deterministas"]
